@@ -59,13 +59,18 @@ class PaypalIpn_Driver_Curl extends \PaypalIpn_Driver
 			// invalid
 		}*/
 
-		$post = $this->post;
-		// we add this to validate the response
-		$req = 'cmd=' . urlencode('_notify-validate');
-		foreach ($post as $key => $value)
-		{
-			$req .= "&$key=$value";
-		}
+		// Reading POSTed data directly from $_POST causes serialization issues with array data in the POST...
+//		$post = $this->post;
+//		// we add this to validate the response
+//		$req = 'cmd=' . urlencode('_notify-validate');
+//		foreach ($post as $key => $value)
+//		{
+//			$req .= "&$key=$value";
+//		}
+
+		// Instead, read raw POST data from the input stream...
+		$raw_post_data = file_get_contents('php://input');
+		$req = 'cmd=_notify-validate&' . $raw_post_data;
 
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $this->config['url']);
@@ -81,7 +86,7 @@ class PaypalIpn_Driver_Curl extends \PaypalIpn_Driver
 
 		if (strcmp ($res, "VERIFIED") == 0)
 		{
-			return $post;
+			return $this->post;
 		}
 
 		return false;
